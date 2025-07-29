@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Area Under Curve</title>
+
+  <!-- Plotly & MathJS CDN -->
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.11.1/math.min.js"></script>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+
+  <!-- Styling -->
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background: #121212;
+      color: #fff;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: auto;
+      padding: 20px;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      text-align: center;
+      color: #00e676;
+      margin-bottom: 20px;
+    }
+
+    label {
+      font-weight: 600;
+      margin-top: 10px;
+      display: block;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 5px 0 15px;
+      border: none;
+      border-radius: 5px;
+      background: #1e1e1e;
+      color: #fff;
+      font-size: 1rem;
+    }
+
+    button {
+      padding: 10px 15px;
+      font-size: 1rem;
+      border: none;
+      border-radius: 5px;
+      margin-right: 10px;
+      cursor: pointer;
+    }
+
+    .btn-run {
+      background-color: #00e676;
+      color: #000;
+    }
+
+    .btn-reset {
+      background-color: #ff5252;
+      color: #fff;
+    }
+
+    .area-box {
+      font-size: 1.1rem;
+      margin-top: 15px;
+      padding: 10px 15px;
+      background: #1e1e1e;
+      border-left: 5px solid green;
+      display: inline-block;
+    }
+
+    .area-box.negative {
+      border-left-color: red;
+    }
+
+    #graph {
+      margin-top: 30px;
+    }
+
+    @media (max-width: 600px) {
+      h1 {
+        font-size: 1.4rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Area Under a Curve</h1>
+
+    <label for="function">Function f(x):</label>
+    <input type="text" id="function" value="x^2" />
+
+    <label for="lower">Lower limit (a):</label>
+    <input type="number" id="lower" value="0" step="0.1" />
+
+    <label for="upper">Upper limit (b):</label>
+    <input type="number" id="upper" value="2" step="0.1" />
+
+    <button class="btn-run" onclick="plot()">Plot & Calculate</button>
+    <button class="btn-reset" onclick="reset()">Reset</button>
+
+    <div id="area" class="area-box" style="display:none;"></div>
+    <div id="graph"></div>
+  </div>
+
+  <script>
+    function plot() {
+      const expr = document.getElementById('function').value;
+      const a = parseFloat(document.getElementById('lower').value);
+      const b = parseFloat(document.getElementById('upper').value);
+      const areaBox = document.getElementById('area');
+
+      let compiled;
+      try {
+        compiled = math.compile(expr);
+      } catch (e) {
+        alert("❌ Invalid function.");
+        return;
+      }
+
+      const step = 0.01;
+      const from = Math.min(a, b);
+      const to = Math.max(a, b);
+      const x_vals = [], y_vals = [];
+
+      for (let x = from; x <= to; x += step) {
+        try {
+          const y = compiled.evaluate({ x });
+          x_vals.push(x);
+          y_vals.push(y);
+        } catch {
+          x_vals.push(x);
+          y_vals.push(NaN);
+        }
+      }
+
+      let area = 0;
+      for (let i = 0; i < x_vals.length - 1; i++) {
+        const dx = x_vals[i + 1] - x_vals[i];
+        const avg_height = (y_vals[i] + y_vals[i + 1]) / 2;
+        area += avg_height * dx;
+      }
+
+      if (a > b) area *= -1;
+
+      areaBox.style.display = "block";
+      areaBox.className = "area-box " + (area < 0 ? "negative" : "");
+      areaBox.innerText = `Area from ${a} to ${b} = ${area.toFixed(4)}`;
+
+      const trace = {
+        x: x_vals,
+        y: y_vals,
+        mode: 'lines',
+        line: { color: '#00e5ff' },
+        name: 'f(x)'
+      };
+
+      const fillTrace = {
+        x: [...x_vals, ...x_vals.slice().reverse()],
+        y: [...y_vals, ...Array(y_vals.length).fill(0).reverse()],
+        fill: 'toself',
+        fillcolor: area < 0 ? 'rgba(255,82,82,0.4)' : 'rgba(0,230,118,0.3)',
+        line: { color: 'transparent' },
+        type: 'scatter',
+        name: 'Area'
+      };
+
+      const layout = {
+        paper_bgcolor: '#121212',
+        plot_bgcolor: '#ffffee',
+        font: { color: '#fff' },
+        title: `f(x) = ${expr}`,
+        xaxis: { title: 'x', range: [a, b] },
+        yaxis: { title: 'f(x)', autorange: true },
+        showlegend: true
+      };
+
+      Plotly.newPlot('graph', [trace, fillTrace], layout, {responsive: true});
+    }
+
+    function reset() {
+      document.getElementById('function').value = "x^2";
+      document.getElementById('lower').value = 0;
+      document.getElementById('upper').value = 2;
+      document.getElementById('area').style.display = "none";
+      document.getElementById('graph').innerHTML = "";
+    }
+
+    window.onload = plot;
+  </script>
+</body>
+</html>
