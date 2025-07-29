@@ -189,6 +189,14 @@
         xaxis: { title: 'x', range: [a, b] },
         yaxis: { title: 'f(x)', autorange: true },
         showlegend: true
+        legend: {
+          x: 0.75,
+          y: 0.95,
+          bgcolor: 'rgba(255,255,255,0.7)',
+          bordercolor: '#ccc',
+          borderwidth: 1
+          },
+          width: 100%, 
       };
 
       Plotly.newPlot('graph', [trace, fillTrace], layout, {responsive: true});
